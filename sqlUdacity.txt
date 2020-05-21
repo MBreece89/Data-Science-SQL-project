@@ -1,0 +1,107 @@
+-- 1
+-----top rented genre and the total sales for them.
+
+WITH sub1 AS (SELECT c.name AS Genre, count(cu.customer_id) AS Total_rent_demand
+			 FROM category c
+			 JOIN film_category fc
+			 USING(category_id)
+			 JOIN film f
+			 USING(film_id)
+			 JOIN inventory i
+			 USING(film_id)
+			 JOIN rental r
+			 USING(inventory_id)
+			 JOIN customer cu
+			 USING(customer_id)
+			 GROUP BY 1
+			 ORDER BY 2 DESC),
+	sub2 AS (SELECT c.name AS Genre, SUM(p.amount)AS total_sales
+			FROM category c
+			JOIN film_category fc
+			USING(category_id)
+			JOIN film f
+			USING (film_id)
+			JOIN inventory i
+			USING (film_id)
+			JOIN rental r
+			USING (inventory_id)
+			JOIN payment p
+			USING (rental_id)
+			GROUP by 1
+			ORDER by 2 desc)
+SELECT sub1.genre, sub1.total_rent_demand, sub2.total_sales
+FROM sub1
+JOIN sub2
+ON sub1.genre = sub2.genre
+
+--2
+----TOTAL NUMBER OF ACTORS BY FILM TITLE(TOP 10)
+
+SELECT 
+	film_table.title AS title,
+	COUNT(actor_table.actor_id) AS total_actors
+FROM film_actor actor_table
+	JOIN film film_table
+	ON film_table.film_id = actor_table.film_id
+GROUP BY film_table.title
+ORDER BY total_actors DESC
+LIMIT 10;
+
+
+--3
+-- total of returns and if they are early, on time or late.
+WITH sub1 AS (SELECT *, DATE_PART('day',return_date - rental_date)
+			 AS difference
+			 FROM rental),
+	 sub2 AS (SELECT rental_duration, difference,
+			 CASE
+			 	WHEN rental_duration > difference THEN 'returned early'
+			 	WHEN rental_duration = difference THEN 'Returned on time'
+			 	ELSE 'Returned late'
+			 	END AS Return_Status
+		FROM film 
+			 JOIN inventory
+			 USING(film_id)
+			 JOIN sub1
+			 USING(inventory_id))
+SELECT return_status, count(*) AS total
+from sub2
+group by return_status
+order by total desc;
+
+
+--4
+-- How many customers per country, and which countries have the most.
+SELECT cou.country, COUNT(cus.customer_id)
+FROM customer cus
+JOIN address a
+ON cus.address_id = a.address_id
+JOIN city cit
+ON a.city_id = cit.city_id
+JOIN country cou
+ON cit.country_id = cou.country_id
+GROUP BY 1
+ORDER BY 2 DESC;
+
+
+--5
+-- total of returns and if they are early, on time or late.
+WITH sub1 AS (SELECT *, DATE_PART('day',return_date - rental_date)
+			 AS difference
+			 FROM rental),
+	 sub2 AS (SELECT rental_duration, difference,
+			 CASE
+			 	WHEN rental_duration > difference THEN 'returned early'
+			 	WHEN rental_duration = difference THEN 'Returned on time'
+			 	ELSE 'Returned late'
+			 	END AS Return_Status
+		FROM film 
+			 JOIN inventory
+			 USING(film_id)
+			 JOIN sub1
+			 USING(inventory_id))
+SELECT return_status, count(*) AS total
+from sub2
+group by return_status
+order by total desc;
+
